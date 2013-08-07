@@ -7,7 +7,7 @@ package main
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
-#include "dSFMT-src-2.2.1/dSFMT.h"
+#include "dSFMT-src-2.2.1/dSFMT.c"
 */
 import "C"
 
