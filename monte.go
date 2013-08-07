@@ -54,7 +54,7 @@ func main() {
   C.dsfmt_init_gen_rand(&dsfmt, 1234);
   size := int(unsafe.Sizeof(C.double(12)))
   fmt.Printf("size: %d\n", size)
-  //simulations := int(10000)
+  //http://stackoverflow.com/questions/6942837/how-to-call-this-c-function-from-go-language-with-cgo-tool/6944001#6944001
   randoms := C.memalign(16, C.size_t(size * simulations))
   defer C.free(randoms)
   r := (*C.double)(randoms)
