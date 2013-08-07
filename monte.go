@@ -33,13 +33,10 @@ func main() {
   fmt.Printf("%s\n", dsfmt)
   C.dsfmt_init_gen_rand(&dsfmt, 1234);
   size := int(unsafe.Sizeof(C.double(12)))
-  //list := C.malloc(C.size_t(size * len(options)))
+  fmt.Printf("size: %d\n", size)
   simulations := int(500)
   randoms := C.memalign(16, C.size_t(size * simulations))
   defer C.free(randoms)
-  //fmt.Printf("sizeof: %d]\n", unsafe.Sizeof(C.double(2000000000)))
-  //r := (_Ctype_double)(_Ctype_double(randoms))
-  //*(*C.double)(randoms) = C.double(randoms)
   r := (*C.double)(randoms)
   C.dsfmt_fill_array_close_open(&dsfmt, r, C.int(simulations));
   var ip = flag.Int("flagname", 1234, "help message for flagname")
