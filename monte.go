@@ -4,6 +4,7 @@ package main
 
 /*
 #cgo CFLAGS: -Wall -O3 -msse2 -DHAVE_SSE2 -DDSFMT_MEXP=19937
+#include <malloc.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -16,6 +17,7 @@ import (
   "fmt"
   "os"
   "bufio"
+  //"unsafe"
 )
 
 func Random() int {
@@ -30,6 +32,13 @@ func main() {
   var dsfmt C.dsfmt_t
   fmt.Printf("%s\n", dsfmt)
   C.dsfmt_init_gen_rand(&dsfmt, 1234);
+  randoms := C.memalign(16, 32 *100)
+  defer C.free(randoms)
+  //fmt.Printf("sizeof: %d]\n", unsafe.Sizeof(C.double(2000000000)))
+  //r := (_Ctype_double)(_Ctype_double(randoms))
+  //*(*C.double)(randoms) = C.double(randoms)
+  r := (*C.double)(randoms)
+  C.dsfmt_fill_array_close_open(&dsfmt, r, 500.0);
   var ip = flag.Int("flagname", 1234, "help message for flagname")
   flag.Parse()
   //fmt.Printf("%d\n", *ip)
