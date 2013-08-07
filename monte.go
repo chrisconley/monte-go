@@ -29,17 +29,8 @@ type RandomGenerator struct {
 }
 
 func main() {
-  var dsfmt C.dsfmt_t
-  fmt.Printf("%s\n", dsfmt)
-  C.dsfmt_init_gen_rand(&dsfmt, 1234);
-  size := int(unsafe.Sizeof(C.double(12)))
-  fmt.Printf("size: %d\n", size)
-  simulations := int(500)
-  randoms := C.memalign(16, C.size_t(size * simulations))
-  defer C.free(randoms)
-  r := (*C.double)(randoms)
-  C.dsfmt_fill_array_close_open(&dsfmt, r, C.int(simulations));
-  var ip = flag.Int("flagname", 1234, "help message for flagname")
+  simulations := *flag.Int("simulations", 10000, "Number of simulations to run.")
+  iterations := *flag.Int("iterations", 10000, "Number of iterations to run - temporary") // this doesn't seem to be working - always uses default
   flag.Parse()
   //fmt.Printf("%d\n", *ip)
   reader := bufio.NewReader(os.Stdin)
@@ -52,11 +43,34 @@ func main() {
       // You may check here if err == io.EOF
       break
     }
-    out.WriteString(fmt.Sprintf("%d, %s", *ip, line))
+    out.WriteString(fmt.Sprintf("%d, %s", simulations, line))
     out.Flush()
 
     //fmt.Printf("%s\n", line)
   }
+
+  var dsfmt C.dsfmt_t
+  fmt.Printf("%s\n", dsfmt)
+  C.dsfmt_init_gen_rand(&dsfmt, 1234);
+  size := int(unsafe.Sizeof(C.double(12)))
+  fmt.Printf("size: %d\n", size)
+  //simulations := int(10000)
+  randoms := C.memalign(16, C.size_t(size * simulations))
+  defer C.free(randoms)
+  r := (*C.double)(randoms)
+  var current_sim float64
+  count := 0
+  for i := 0; i < iterations; i++ {
+    C.dsfmt_fill_array_close_open(&dsfmt, r, C.int(simulations));
+
+    for j := 0; j < simulations; j++ {
+      ptr := unsafe.Pointer( uintptr(randoms) + uintptr(size * j) )
+      current_sim = *(*float64)(ptr)
+      count++
+    }
+  }
+  fmt.Printf("%s\n", current_sim)
+  fmt.Printf("count %d\n", count)
 }
 
 
