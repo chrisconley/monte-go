@@ -29,7 +29,7 @@ type RandomGenerator struct {
 func main() {
   var dsfmt C.dsfmt_t
   fmt.Printf("%s\n", dsfmt)
-  //C.dsfmt_init_gen_rand(&dsfmt, 1234);
+  C.dsfmt_init_gen_rand(&dsfmt, 1234);
   var ip = flag.Int("flagname", 1234, "help message for flagname")
   flag.Parse()
   //fmt.Printf("%d\n", *ip)
