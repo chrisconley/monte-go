@@ -32,7 +32,7 @@ func main() {
   var dsfmt C.dsfmt_t
   fmt.Printf("%s\n", dsfmt)
   C.dsfmt_init_gen_rand(&dsfmt, 1234);
-  randoms := C.memalign(16, 32 *100)
+  randoms := C.memalign(16, 32 * 500)
   defer C.free(randoms)
   //fmt.Printf("sizeof: %d]\n", unsafe.Sizeof(C.double(2000000000)))
   //r := (_Ctype_double)(_Ctype_double(randoms))
