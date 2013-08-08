@@ -32,6 +32,14 @@ type RandomGenerator struct {
   dsfmt *C.dsfmt_t
 }
 
+type Summary struct {
+  y0 float64
+  y1 float64
+  y2 float64
+}
+
+type SimulationSummaries [][]*Summary
+
 type WeightSet []float64
 
 func (ws *WeightSet) String() string {
@@ -55,6 +63,7 @@ func main() {
   flag.Var(&weights, "weights", "How we should weight each group")
   flag.Parse()
 
+  // This should be fleshed out a bit with: http://crypto.stanford.edu/~blynn/c2go/ch02.html
   reader := csv.NewReader(os.Stdin)
   out := csv.NewWriter(os.Stdout)
 
@@ -67,7 +76,18 @@ func main() {
   r := (*C.double)(randoms)
   var current_sim float64
   count := 0
-  // This should be fleshed out a bit with: http://crypto.stanford.edu/~blynn/c2go/ch02.html
+
+  // Initialize our SimulationSummaries slice
+  // There's gotta be a better way to do this
+  var results SimulationSummaries
+  results = make(SimulationSummaries, *simulations)
+  for j := 0; j < *simulations; j++ {
+    results[j] = make([]*Summary, len(weights))
+    for w := 0; w < len(weights); w++ {
+      results[j][w] = &Summary {}
+    }
+  }
+
   for {
     arr, err := reader.Read()
     if err == io.EOF {
@@ -86,13 +106,20 @@ func main() {
     for j := 0; j < *simulations; j++ {
       ptr := unsafe.Pointer( uintptr(randoms) + uintptr(size * j) )
       current_sim = *(*float64)(ptr)
+
       // here we can look up which group this should go to based on weights
       // Get the SimulationSummary for the group, and add y0, y1, y2
+      assignment := 0
+
+      results[j][assignment].y0 += y0
+      results[j][assignment].y1 += y1
+      results[j][assignment].y2 += y2
       count++
     }
   }
-    // TODO: out.Write(fmt.Sprintf("%d, %s", *simulations, line))
-    out.Flush()
+  // TODO: out.Write(fmt.Sprintf("%d, %s", *simulations, line))
+  out.Flush()
+  //fmt.Printf("%s\n", results)
   fmt.Printf("%s\n", current_sim)
   fmt.Printf("count %d\n", count)
 }
