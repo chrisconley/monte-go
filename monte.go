@@ -88,11 +88,17 @@ func main() {
     }
   }
 
-  for {
+  // TODO
+  // weight_distribution := calculation_weight_distribution(weights)
+
+  for { // every line in the csv reader
     arr, err := reader.Read()
     if err == io.EOF {
       break
     }
+
+    // TODO: Move this to parseData method and handle parseFloat errors
+    // y0, y1, y2 := parseData(arr)
     y0, err := strconv.ParseFloat(arr[1], 64)
     y1, err := strconv.ParseFloat(arr[2], 64)
     y2, err := strconv.ParseFloat(arr[3], 64)
@@ -109,6 +115,7 @@ func main() {
 
       // here we can look up which group this should go to based on weights
       // Get the SimulationSummary for the group, and add y0, y1, y2
+      // assignment := get_assignment(weight_distribution, current_sim)
       assignment := 0
 
       results[j][assignment].y0 += y0
