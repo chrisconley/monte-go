@@ -70,6 +70,31 @@ func getAssignment (weightDistribution []float64 sim float64) int {
   return assignment
 }
 
+func calculateWeightDistribution (weights []float64) []float64 {
+  totalWeight := 0.0
+  for _, weight := range weights {
+    totalWeight += weight
+  }
+
+  weightDistribution := []float64{}
+  runningWeight := 0.0
+  for _, weight := range weights {
+    runningWeight += weight
+    normalizedWeight := runningWeight / totalWeight
+    weightDistribution = append(weightDistribution, normalizedWeight)
+  }
+
+  fmt.Printf("%s\n", weightDistribution)
+  return weightDistribution
+}
+
+func parseCsvRecord(csvRecord []string) (float64, float64, float64, error) {
+    y0, err := strconv.ParseFloat(csvRecord[1], 64)
+    y1, err := strconv.ParseFloat(csvRecord[2], 64)
+    y2, err := strconv.ParseFloat(csvRecord[3], 64)
+    return y0, y1, y2, err
+}
+
 func main() {
   simulations := flag.Int("simulations", 10000, "Number of simulations to run.")
   flag.Var(&weights, "weights", "How we should weight each group")
@@ -100,23 +125,20 @@ func main() {
     }
   }
 
-  // TODO
-  // weight_distribution := calculateWeightDistribution(weights)
+  weightDistribution := calculateWeightDistribution(weights)
+  fmt.Printf("weightDistribution %s\n", weightDistribution)
 
   for { // every line in the csv reader
-    arr, err := reader.Read()
+    csvRecord, err := reader.Read()
     if err == io.EOF {
       break
     }
 
-    // TODO: Move this to parseData method and handle parseFloat errors
-    // y0, y1, y2 := parseData(arr)
-    y0, err := strconv.ParseFloat(arr[1], 64)
-    y1, err := strconv.ParseFloat(arr[2], 64)
-    y2, err := strconv.ParseFloat(arr[3], 64)
-    fmt.Printf("y0 %s\n", y0)
-    fmt.Printf("y1 %s\n", y1)
-    fmt.Printf("y2 %s\n", y2)
+    y0, y1, y2, err := parseCsvRecord(csvRecord)
+    if err != nil {
+      fmt.Printf("%v\n", err)
+      break
+    }
 
 
     C.dsfmt_fill_array_close_open(&dsfmt, r, C.int(*simulations));
@@ -127,7 +149,7 @@ func main() {
 
       // here we can look up which group this should go to based on weights
       // Get the SimulationSummary for the group, and add y0, y1, y2
-      weightDistribution := []float64{0.5, 1.00}
+      //weightDistribution := []float64{0.5, 1.00}
       assignment := getAssignment(weightDistribution, current_sim)
       //assignment := 0
 
