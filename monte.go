@@ -1,6 +1,12 @@
 // Usage:
+
+// From local:
+// rsync -avt --delete --exclude=".git" . analytics:/tmp/monte
+
+// On dev box
 // go build monte.go
 // time echo -e "a,1,1,1\nb,2,10,100" | (./monte --simulations=10000 --weights=1 --weights=2)
+
 package main
 
 /*
@@ -84,7 +90,6 @@ func calculateWeightDistribution (weights []float64) []float64 {
     weightDistribution = append(weightDistribution, normalizedWeight)
   }
 
-  fmt.Printf("weightDistribution %s\n", weightDistribution)
   return weightDistribution
 }
 
