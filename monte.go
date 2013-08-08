@@ -95,6 +95,21 @@ func parseCsvRecord(csvRecord []string) (float64, float64, float64, error) {
     return y0, y1, y2, err
 }
 
+// Initialize our SimulationSummaries slice
+// There's gotta be a better way to do this
+func initSimulationSummaries(numSimulations int, numGroups int) SimulationSummaries {
+  var simulations SimulationSummaries
+  simulations = make(SimulationSummaries, numSimulations)
+  for j := 0; j < numSimulations; j++ {
+    simulations[j] = make([]*Summary, numGroups)
+    for g := 0; g < numGroups; g++ {
+      simulations[j][g] = &Summary {}
+    }
+  }
+
+  return simulations
+}
+
 func main() {
   simulations := flag.Int("simulations", 10000, "Number of simulations to run.")
   flag.Var(&weights, "weights", "How we should weight each group")
@@ -114,16 +129,7 @@ func main() {
   var current_sim float64
   count := 0
 
-  // Initialize our SimulationSummaries slice
-  // There's gotta be a better way to do this
-  var results SimulationSummaries
-  results = make(SimulationSummaries, *simulations)
-  for j := 0; j < *simulations; j++ {
-    results[j] = make([]*Summary, len(weights))
-    for w := 0; w < len(weights); w++ {
-      results[j][w] = &Summary {}
-    }
-  }
+  results := initSimulationSummaries(*simulations, len(weights))
 
   weightDistribution := calculateWeightDistribution(weights)
   fmt.Printf("weightDistribution %s\n", weightDistribution)
