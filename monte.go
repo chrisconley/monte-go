@@ -5,7 +5,7 @@
 
 // On dev box
 // go build monte.go
-// time echo -e "a,1,1,1\nb,2,10,100" | (./monte --simulations=10000 --weights=1 --weights=2)
+// time head -n 100000 example.csv | (./monte --simulations=10000 --weights 5 --weights 5) > /mnt/tmp/montego-results.csv
 
 package main
 
