@@ -1,5 +1,6 @@
 // Usage:
-// echo -e "hi\nbye" | (go build monte.go && ./monte --flagname=12) > ./test.txt
+// go build monte.go
+// time echo -e "a,1,1,1\nb,2,10,100" | (./monte --simulations=10000 --weights=1 --weights=2)
 package main
 
 /*
@@ -58,6 +59,17 @@ func (ws *WeightSet) Set(value string) error {
 
 var weights WeightSet
 
+func getAssignment (weightDistribution []float64 sim float64) int {
+  assignment := 0
+  for assignment < len(weightDistribution) {
+    if sim < weightDistribution[assignment] {
+      break
+    }
+    assignment++
+  }
+  return assignment
+}
+
 func main() {
   simulations := flag.Int("simulations", 10000, "Number of simulations to run.")
   flag.Var(&weights, "weights", "How we should weight each group")
@@ -89,7 +101,7 @@ func main() {
   }
 
   // TODO
-  // weight_distribution := calculation_weight_distribution(weights)
+  // weight_distribution := calculateWeightDistribution(weights)
 
   for { // every line in the csv reader
     arr, err := reader.Read()
@@ -115,8 +127,9 @@ func main() {
 
       // here we can look up which group this should go to based on weights
       // Get the SimulationSummary for the group, and add y0, y1, y2
-      // assignment := get_assignment(weight_distribution, current_sim)
-      assignment := 0
+      weightDistribution := []float64{0.5, 1.00}
+      assignment := getAssignment(weightDistribution, current_sim)
+      //assignment := 0
 
       results[j][assignment].y0 += y0
       results[j][assignment].y1 += y1
@@ -126,7 +139,9 @@ func main() {
   }
   // TODO: out.Write(fmt.Sprintf("%d, %s", *simulations, line))
   out.Flush()
-  //fmt.Printf("%s\n", results)
+  for _, res := range results {
+    fmt.Printf("%s\n", res)
+  }
   fmt.Printf("%s\n", current_sim)
   fmt.Printf("count %d\n", count)
 }
