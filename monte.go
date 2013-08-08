@@ -63,7 +63,6 @@ func (ws *WeightSet) Set(value string) error {
     return nil
 }
 
-var weights WeightSet
 
 func getAssignment (weightDistribution []float64 sim float64) int {
   assignment := 0
@@ -127,10 +126,15 @@ func prepSimulationSummaries(simulations SimulationSummaries, numSimulations int
   return flattenedSummaries
 }
 
+// TODO: Profiling: http://blog.golang.org/profiling-go-programs
 func main() {
-  simulations := flag.Int("simulations", 10000, "Number of simulations to run.")
+  var numSimulations int
+  var weights WeightSet
+  flag.IntVar(&numSimulations, "simulations", 10000, "Number of simulations to run.")
   flag.Var(&weights, "weights", "How we should weight each group")
   flag.Parse()
+
+  numGroups := len(weights)
 
   // This should be fleshed out a bit with: http://crypto.stanford.edu/~blynn/c2go/ch02.html
   reader := csv.NewReader(os.Stdin)
@@ -140,12 +144,12 @@ func main() {
   C.dsfmt_init_gen_rand(&dsfmt, 1234);
   size := int(unsafe.Sizeof(C.double(12)))
   //http://stackoverflow.com/questions/6942837/how-to-call-this-c-function-from-go-language-with-cgo-tool/6944001#6944001
-  randoms := C.memalign(16, C.size_t(size * *simulations))
+  randoms := C.memalign(16, C.size_t(size * numSimulations))
   defer C.free(randoms)
   r := (*C.double)(randoms)
   var current_sim float64
 
-  results := initSimulationSummaries(*simulations, len(weights))
+  results := initSimulationSummaries(numSimulations, numGroups)
 
   weightDistribution := calculateWeightDistribution(weights)
 
@@ -161,9 +165,9 @@ func main() {
       break
     }
 
-    C.dsfmt_fill_array_close_open(&dsfmt, r, C.int(*simulations));
+    C.dsfmt_fill_array_close_open(&dsfmt, r, C.int(numSimulations));
 
-    for j := 0; j < *simulations; j++ {
+    for j := 0; j < numSimulations; j++ {
       ptr := unsafe.Pointer( uintptr(randoms) + uintptr(size * j) )
       current_sim = *(*float64)(ptr)
 
@@ -174,8 +178,7 @@ func main() {
       results[j][assignment].y2 += y2
     }
   }
-  // TODO: out.Write(fmt.Sprintf("%d, %s", *simulations, line))
-  flattenedSummaries := prepSimulationSummaries(results, *simulations, len(weights))
+  flattenedSummaries := prepSimulationSummaries(results, numSimulations, numGroups)
   out.WriteAll(flattenedSummaries)
 }
 
