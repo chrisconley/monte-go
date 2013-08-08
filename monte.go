@@ -84,7 +84,7 @@ func calculateWeightDistribution (weights []float64) []float64 {
     weightDistribution = append(weightDistribution, normalizedWeight)
   }
 
-  fmt.Printf("%s\n", weightDistribution)
+  fmt.Printf("weightDistribution %s\n", weightDistribution)
   return weightDistribution
 }
 
@@ -100,14 +100,26 @@ func parseCsvRecord(csvRecord []string) (float64, float64, float64, error) {
 func initSimulationSummaries(numSimulations int, numGroups int) SimulationSummaries {
   var simulations SimulationSummaries
   simulations = make(SimulationSummaries, numSimulations)
-  for j := 0; j < numSimulations; j++ {
-    simulations[j] = make([]*Summary, numGroups)
+  for s := 0; s < numSimulations; s++ {
+    simulations[s] = make([]*Summary, numGroups)
     for g := 0; g < numGroups; g++ {
-      simulations[j][g] = &Summary {}
+      simulations[s][g] = &Summary {}
     }
   }
 
   return simulations
+}
+
+func prepSimulationSummaries(simulations SimulationSummaries, numSimulations int, numGroups int) [][]string {
+  flattenedSummaries := [][]string{}
+  for s := 0; s < numSimulations; s++ {
+    for g := 0; g < numGroups; g++ {
+      summary := simulations[s][g]
+      csvRecord := []string{strconv.Itoa(s), strconv.Itoa(g), strconv.FormatFloat(summary.y0, 'f', -1, 64), strconv.FormatFloat(summary.y1, 'f', -1, 64), strconv.FormatFloat(summary.y2, 'f', -1, 64)}
+      flattenedSummaries = append(flattenedSummaries, csvRecord)
+    }
+  }
+  return flattenedSummaries
 }
 
 func main() {
@@ -127,12 +139,10 @@ func main() {
   defer C.free(randoms)
   r := (*C.double)(randoms)
   var current_sim float64
-  count := 0
 
   results := initSimulationSummaries(*simulations, len(weights))
 
   weightDistribution := calculateWeightDistribution(weights)
-  fmt.Printf("weightDistribution %s\n", weightDistribution)
 
   for { // every line in the csv reader
     csvRecord, err := reader.Read()
@@ -146,32 +156,22 @@ func main() {
       break
     }
 
-
     C.dsfmt_fill_array_close_open(&dsfmt, r, C.int(*simulations));
 
     for j := 0; j < *simulations; j++ {
       ptr := unsafe.Pointer( uintptr(randoms) + uintptr(size * j) )
       current_sim = *(*float64)(ptr)
 
-      // here we can look up which group this should go to based on weights
-      // Get the SimulationSummary for the group, and add y0, y1, y2
-      //weightDistribution := []float64{0.5, 1.00}
       assignment := getAssignment(weightDistribution, current_sim)
-      //assignment := 0
 
       results[j][assignment].y0 += y0
       results[j][assignment].y1 += y1
       results[j][assignment].y2 += y2
-      count++
     }
   }
   // TODO: out.Write(fmt.Sprintf("%d, %s", *simulations, line))
-  out.Flush()
-  for _, res := range results {
-    fmt.Printf("%s\n", res)
-  }
-  fmt.Printf("%s\n", current_sim)
-  fmt.Printf("count %d\n", count)
+  flattenedSummaries := prepSimulationSummaries(results, *simulations, len(weights))
+  out.WriteAll(flattenedSummaries)
 }
 
 
