@@ -30,6 +30,7 @@ import (
   "strconv"
   //"strings"
   "log"
+  "sync"
 )
 
 func Random() int {
@@ -44,6 +45,7 @@ type Summary struct {
   y0 float64
   y1 float64
   y2 float64
+  mu sync.Mutex
 }
 
 type SimulationSummaries [][]*Summary
@@ -158,9 +160,10 @@ func runCsvRecordSimulations(reader *csv.Reader, simulationSummaries SimulationS
 
       // Get the group assignment and update the appropriate simulationSummary
       assignment := getAssignment(weightDistribution, currentRandom)
-      simulationSummaries[i][assignment].y0 += y0
-      simulationSummaries[i][assignment].y1 += y1
-      simulationSummaries[i][assignment].y2 += y2
+      summary := simulationSummaries[i][assignment]
+      summary.y0 += y0
+      summary.y1 += y1
+      summary.y2 += y2
     }
 
     C.free(randoms)
