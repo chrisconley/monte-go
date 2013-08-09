@@ -33,10 +33,6 @@ import (
   "sync"
 )
 
-func Random() int {
-    return int(C.rand())
-}
-
 type RandomGenerator struct {
   dsfmt *C.dsfmt_t
 }
