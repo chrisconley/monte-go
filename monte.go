@@ -127,30 +127,11 @@ func prepSimulationSummaries(simulations SimulationSummaries, numSimulations int
   return flattenedSummaries
 }
 
-// TODO: Profiling: http://blog.golang.org/profiling-go-programs
-func main() {
-  var numSimulations int
-  var weights WeightSet
-  flag.IntVar(&numSimulations, "simulations", 10000, "Number of simulations to run.")
-  flag.Var(&weights, "weights", "How we should weight each group")
-  flag.Parse()
-
-  numGroups := len(weights)
-  simulationSummaries := initSimulationSummaries(numSimulations, numGroups)
-  weightDistribution := calculateWeightDistribution(weights)
-
-  reader := csv.NewReader(os.Stdin)
-  out := csv.NewWriter(os.Stdout)
-
-  // Initialize and seed the Double SIMD Fast Mersenne Twister.
-  var dsfmt C.dsfmt_t
-  C.dsfmt_init_gen_rand(&dsfmt, 1234);
-
-  for {
+func runCsvRecordSimulations(reader *csv.Reader, simulationSummaries SimulationSummaries, numSimulations int, dsfmt C.dsfmt_t, weightDistribution []float64) error {
     // Read from csv until we hit the end of the file
     csvRecord, err := reader.Read()
     if err == io.EOF {
-      break
+      return err
     }
 
     // If we encounter an error attempting to grab y0, y1, y2 from this csv record, exit.
@@ -183,6 +164,33 @@ func main() {
     }
 
     C.free(randoms)
+    return nil
+}
+
+// TODO: Profiling: http://blog.golang.org/profiling-go-programs
+func main() {
+  var numSimulations int
+  var weights WeightSet
+  flag.IntVar(&numSimulations, "simulations", 10000, "Number of simulations to run.")
+  flag.Var(&weights, "weights", "How we should weight each group")
+  flag.Parse()
+
+  numGroups := len(weights)
+  simulationSummaries := initSimulationSummaries(numSimulations, numGroups)
+  weightDistribution := calculateWeightDistribution(weights)
+
+  reader := csv.NewReader(os.Stdin)
+  out := csv.NewWriter(os.Stdout)
+
+  // Initialize and seed the Double SIMD Fast Mersenne Twister.
+  var dsfmt C.dsfmt_t
+  C.dsfmt_init_gen_rand(&dsfmt, 1234);
+
+  for {
+    err := runCsvRecordSimulations(reader, simulationSummaries, numSimulations, dsfmt, weightDistribution)
+    if err == io.EOF {
+      break
+    }
   }
 
   // Write out the simulationSummaries to the csv writer.
