@@ -29,6 +29,7 @@ import (
   "unsafe"
   "strconv"
   //"strings"
+  "log"
 )
 
 func Random() int {
@@ -135,50 +136,54 @@ func main() {
   flag.Parse()
 
   numGroups := len(weights)
+  simulationSummaries := initSimulationSummaries(numSimulations, numGroups)
+  weightDistribution := calculateWeightDistribution(weights)
 
-  // This should be fleshed out a bit with: http://crypto.stanford.edu/~blynn/c2go/ch02.html
   reader := csv.NewReader(os.Stdin)
   out := csv.NewWriter(os.Stdout)
 
+  // Initialize and seed the Double SIMD Fast Mersenne Twister.
   var dsfmt C.dsfmt_t
   C.dsfmt_init_gen_rand(&dsfmt, 1234);
+  // Allocate aligned memory to hold the random numbers we'll generate for the number of simulations we want to run.
   size := int(unsafe.Sizeof(C.double(12)))
-  //http://stackoverflow.com/questions/6942837/how-to-call-this-c-function-from-go-language-with-cgo-tool/6944001#6944001
   randoms := C.memalign(16, C.size_t(size * numSimulations))
   defer C.free(randoms)
-  r := (*C.double)(randoms)
-  var current_sim float64
 
-  results := initSimulationSummaries(numSimulations, numGroups)
-
-  weightDistribution := calculateWeightDistribution(weights)
-
-  for { // every line in the csv reader
+  for {
+    // Read from csv until we hit the end of the file
     csvRecord, err := reader.Read()
     if err == io.EOF {
       break
     }
 
+    // If we encounter an error attempting to grab y0, y1, y2 from this csv record, exit.
     y0, y1, y2, err := parseCsvRecord(csvRecord)
     if err != nil {
-      fmt.Printf("%v\n", err)
-      break
+      log.Fatalf("%v\n", err)
     }
 
-    C.dsfmt_fill_array_close_open(&dsfmt, r, C.int(numSimulations));
+    // Generates double precision floating point
+    // pseudorandom numbers which distribute in the range [0, 1) to the
+    // array held at the `randoms` pointer.
+    C.dsfmt_fill_array_close_open(&dsfmt, (*C.double)(randoms), C.int(numSimulations));
 
-    for j := 0; j < numSimulations; j++ {
-      ptr := unsafe.Pointer( uintptr(randoms) + uintptr(size * j) )
-      current_sim = *(*float64)(ptr)
+    for i := 0; i < numSimulations; i++ {
+      // Here we grab a pointer to the next random number and grab the value
+      // at that location as a float.
+      ptr := unsafe.Pointer( uintptr(randoms) + uintptr(size * i) )
+      currentRandom := *(*float64)(ptr)
 
-      assignment := getAssignment(weightDistribution, current_sim)
-
-      results[j][assignment].y0 += y0
-      results[j][assignment].y1 += y1
-      results[j][assignment].y2 += y2
+      // Get the group assignment and update the appropriate simulationSummary
+      assignment := getAssignment(weightDistribution, currentRandom)
+      simulationSummaries[i][assignment].y0 += y0
+      simulationSummaries[i][assignment].y1 += y1
+      simulationSummaries[i][assignment].y2 += y2
     }
   }
-  flattenedSummaries := prepSimulationSummaries(results, numSimulations, numGroups)
+
+  // Write out the simulationSummaries to the csv writer.
+  flattenedSummaries := prepSimulationSummaries(simulationSummaries, numSimulations, numGroups)
   out.WriteAll(flattenedSummaries)
 }
 
