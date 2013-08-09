@@ -145,10 +145,6 @@ func main() {
   // Initialize and seed the Double SIMD Fast Mersenne Twister.
   var dsfmt C.dsfmt_t
   C.dsfmt_init_gen_rand(&dsfmt, 1234);
-  // Allocate aligned memory to hold the random numbers we'll generate for the number of simulations we want to run.
-  size := int(unsafe.Sizeof(C.double(12)))
-  randoms := C.memalign(16, C.size_t(size * numSimulations))
-  defer C.free(randoms)
 
   for {
     // Read from csv until we hit the end of the file
@@ -162,6 +158,11 @@ func main() {
     if err != nil {
       log.Fatalf("%v\n", err)
     }
+
+    // Allocate aligned memory to hold the random numbers we'll generate for the number of simulations we want to run.
+    size := int(unsafe.Sizeof(C.double(12)))
+    randoms := C.memalign(16, C.size_t(size * numSimulations))
+    //defer C.free(randoms) // TODO: If we make a function for this stuff in the loop, we can use defer
 
     // Generates double precision floating point
     // pseudorandom numbers which distribute in the range [0, 1) to the
@@ -180,6 +181,8 @@ func main() {
       simulationSummaries[i][assignment].y1 += y1
       simulationSummaries[i][assignment].y2 += y2
     }
+
+    C.free(randoms)
   }
 
   // Write out the simulationSummaries to the csv writer.
