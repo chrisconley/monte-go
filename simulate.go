@@ -4,8 +4,8 @@
 // rsync -avt --delete --exclude=".git" . analytics:/tmp/monte
 
 // On dev box
-// go build monte.go
-// time head -n 100000 example.csv | (./monte --simulations=10000 --weights 5 --weights 5) > /mnt/tmp/montego-results.csv
+// go build simulate.go
+// time head -n 100000 test/samples.csv | (./simulate --simulations=10000 --weights 5 --weights 5) > /mnt/tmp/montego-results.csv
 
 package main
 
