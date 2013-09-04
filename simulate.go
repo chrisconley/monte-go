@@ -125,7 +125,7 @@ func prepSimulationSummaries(simulations SimulationSummaries, numSimulations int
   return flattenedSummaries
 }
 
-func runCsvRecordSimulations(reader *csv.Reader, simulationSummaries SimulationSummaries, numSimulations int, dsfmt C.dsfmt_t, weightDistribution []float64) error {
+func runCsvRecordSimulations(reader *csv.Reader, simulationSummaries SimulationSummaries, numSimulations int, dsfmt *C.dsfmt_t, weightDistribution []float64) error {
     // Read from csv until we hit the end of the file
     csvRecord, err := reader.Read()
     if err == io.EOF {
@@ -146,7 +146,7 @@ func runCsvRecordSimulations(reader *csv.Reader, simulationSummaries SimulationS
     // Generates double precision floating point
     // pseudorandom numbers which distribute in the range [0, 1) to the
     // array held at the `randoms` pointer.
-    C.dsfmt_fill_array_close_open(&dsfmt, (*C.double)(randoms), C.int(numSimulations));
+    C.dsfmt_fill_array_close_open(dsfmt, (*C.double)(randoms), C.int(numSimulations));
 
     for i := 0; i < numSimulations; i++ {
       // Here we grab a pointer to the next random number and grab the value
@@ -186,7 +186,7 @@ func main() {
   C.dsfmt_init_gen_rand(&dsfmt, 1234);
 
   for {
-    err := runCsvRecordSimulations(reader, simulationSummaries, numSimulations, dsfmt, weightDistribution)
+    err := runCsvRecordSimulations(reader, simulationSummaries, numSimulations, &dsfmt, weightDistribution)
     if err == io.EOF {
       break
     }
