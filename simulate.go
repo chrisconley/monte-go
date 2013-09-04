@@ -141,7 +141,7 @@ func runCsvRecordSimulations(reader *csv.Reader, simulationSummaries SimulationS
     // Allocate aligned memory to hold the random numbers we'll generate for the number of simulations we want to run.
     size := int(unsafe.Sizeof(C.double(12)))
     randoms := C.memalign(16, C.size_t(size * numSimulations))
-    //defer C.free(randoms) // TODO: If we make a function for this stuff in the loop, we can use defer
+    defer C.free(randoms) // TODO: If we make a function for this stuff in the loop, we can use defer
 
     // Generates double precision floating point
     // pseudorandom numbers which distribute in the range [0, 1) to the
@@ -162,7 +162,6 @@ func runCsvRecordSimulations(reader *csv.Reader, simulationSummaries SimulationS
       summary.y2 += y2
     }
 
-    C.free(randoms)
     return nil
 }
 
